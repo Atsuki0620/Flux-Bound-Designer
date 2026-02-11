@@ -1,7 +1,6 @@
-# Spec-Finder
+# Flux Bound Designer
 
-Ele.Flow 回帰分析を行う Streamlit アプリです。  
-CSVを読み込み、回帰直線・95%予測区間・Ele.Flow上下限・交点を可視化します。
+Streamlit app for regression analysis of F.S.Flux vs Ele.Flow, visualizing regression line, 95% prediction interval, and intersections with Ele.Flow bounds.
 
 ## 動作環境
 - Windows 10/11
@@ -31,7 +30,7 @@ streamlit run app.py
   --noconfirm `
   --clean `
   --onedir `
-  --name EleFlowAnalyzer `
+  --name FluxBoundDesigner `
   --collect-all streamlit `
   --collect-all plotly `
   --collect-all statsmodels `
@@ -41,11 +40,11 @@ streamlit run app.py
 ```
 
 出力先:
-- `dist\EleFlowAnalyzer\EleFlowAnalyzer.exe`
+- `dist\FluxBoundDesigner\FluxBoundDesigner.exe`
 
 ## 配布物の起動
 ```powershell
-.\dist\EleFlowAnalyzer\EleFlowAnalyzer.exe
+.\dist\FluxBoundDesigner\FluxBoundDesigner.exe
 ```
 起動後、ブラウザで `http://localhost:8501` を開いて利用します。
 

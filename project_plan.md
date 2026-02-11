@@ -25,11 +25,11 @@
 - 成果:
   - `run_streamlit_app.py` を追加
   - PyInstaller `--onedir` ビルドを完了
-  - `dist/EleFlowAnalyzer_win64_20260212_001837.zip` を作成
+  - `dist/FluxBoundDesigner_win64_20260212_001837.zip` を作成
   - `README.md` と `release_checklist.md` を更新
 
 ---
 
 ## 実施履歴（2026-02-12）
 - Streamlit UI最終確定（日本語UI、ステップ導線、進捗0-100%、表示調整）
-- 配布物起動確認: `dist/EleFlowAnalyzer/EleFlowAnalyzer.exe` から localhost 応答確認
+- 配布物起動確認: `dist/FluxBoundDesigner/FluxBoundDesigner.exe` から localhost 応答確認

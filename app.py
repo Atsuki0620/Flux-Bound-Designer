@@ -7,7 +7,7 @@ import streamlit as st
 from src.analysis import analyze_dataframe, build_figure, validate_dataframe
 
 
-st.set_page_config(page_title="Ele.Flow 回帰分析ツール", layout="wide")
+st.set_page_config(page_title="Flux Bound Designer", layout="wide")
 
 
 def build_template_csv_bytes() -> bytes:
@@ -31,8 +31,8 @@ def update_progress(progress_bar, status_box, value: int, message: str) -> None:
     status_box.info(f"進捗: {value}% - {message}")
 
 
-st.title("Ele.Flow 回帰分析ツール")
-st.caption("CSVをアップロードすると、回帰直線・予測区間・Ele.Flow上下限との交点を可視化します。")
+st.title("Flux Bound Designer")
+st.caption("Upload a CSV file to visualize the regression line, 95% prediction interval, and intersections with Ele.Flow bounds.")
 
 template_bytes = build_template_csv_bytes()
 
