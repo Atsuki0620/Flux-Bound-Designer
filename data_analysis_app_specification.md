@@ -50,8 +50,8 @@
 ## 8. 配布仕様
 - PyInstaller `--onedir` を採用
 - エントリーポイント: `run_streamlit_app.py`
-- 実行ファイル: `dist/EleFlowAnalyzer/EleFlowAnalyzer.exe`
-- 配布アーカイブ: `dist/EleFlowAnalyzer_win64_20260212_001837.zip`
+- 実行ファイル: `dist/FluxBoundDesigner/FluxBoundDesigner.exe`
+- 配布アーカイブ: `dist/FluxBoundDesigner_win64_20260212_001837.zip`
 
 ---
 
