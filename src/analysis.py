@@ -175,7 +175,7 @@ def build_figure(
             x=[x_plot_min, x_plot_max],
             y=[float(min_ele_flow), float(min_ele_flow)],
             mode="lines",
-            name="Ele.Flow???",
+            name="Ele.Flow上下限",
             line=dict(color="blue", width=2),
         )
     )
@@ -184,7 +184,7 @@ def build_figure(
             x=[x_plot_min, x_plot_max],
             y=[float(max_ele_flow), float(max_ele_flow)],
             mode="lines",
-            name="Ele.Flow???",
+            name="Ele.Flow上下限",
             showlegend=False,
             line=dict(color="blue", width=2),
         )
