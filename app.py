@@ -32,12 +32,12 @@ def update_progress(progress_bar, status_box, value: int, message: str) -> None:
 
 
 st.title("Flux Bound Designer")
-st.caption("Upload a CSV file to visualize the regression line, 95% prediction interval, and intersections with Ele.Flow bounds.")
+st.caption("平膜とエレメントの相関関係およびバラツキを考慮して平膜規格を提案します。")
 
 template_bytes = build_template_csv_bytes()
 
-st.subheader("ステップ1: CSVテンプレートをダウンロード")
-st.write("ステップ1: CSVテンプレートをダウンロードして、F.S.Flux と Ele.Flow の2列でデータを準備してください。")
+st.subheader("ステップ1")
+st.write("CSVテンプレートをダウンロードして、F.S.Flux と Ele.Flow の2列でデータを準備してください。")
 st.download_button(
     label="テンプレートCSVをダウンロード",
     data=template_bytes,
@@ -46,8 +46,8 @@ st.download_button(
     use_container_width=True,
 )
 
-st.subheader("ステップ2: CSVをアップロード")
-st.write("ステップ2: 作成したCSVファイルをアップロードしてください。")
+st.subheader("ステップ2")
+st.write("作成したCSVファイルをアップロードしてください。")
 uploaded_file = st.file_uploader(
     "解析に使うCSVファイルを選択してください",
     type=["csv"],
@@ -62,8 +62,8 @@ if uploaded_file is not None:
     except Exception as exc:
         st.error(f"CSVの読み込みに失敗しました: {exc}")
 
-st.subheader("ステップ3: 解析条件を入力")
-st.write("ステップ3: Min_Ele_Flow（下限）と Max_Ele_Flow（上限）を入力してください。")
+st.subheader("ステップ3")
+st.write("Min_Ele_Flow（下限）と Max_Ele_Flow（上限）を入力してください。")
 input_col1, input_col2, input_col3 = st.columns([1, 1, 1.2])
 with input_col1:
     min_ele_flow = st.number_input("Min_Ele_Flow（下限）", value=8800.0, step=0.1)
@@ -118,8 +118,7 @@ if run_clicked:
             st.subheader("解析結果")
             st.write(f"回帰式: y = {result.slope:.3f}x {result.intercept:+.3f}")
             st.write(f"決定係数 R^2: {result.r_squared:.3f}")
-            st.write(f"min_intersection: {result.min_intersection:.3f}")
-            st.write(f"max_intersection: {result.max_intersection:.3f}")
+            st.write(f"推奨平膜規格範囲 F.S.Flux: {result.min_intersection:.3f} ～ {result.max_intersection:.3f}")
             st.plotly_chart(fig, use_container_width=True)
         except Exception as exc:
             status_box.empty()
