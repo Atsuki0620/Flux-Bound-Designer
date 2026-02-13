@@ -13,6 +13,15 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+## プロジェクト構成
+- `app.py` - Streamlit アプリケーション本体
+- `src/` - 解析ロジック
+- `tests/` - テストコード
+- `tools/` - ビルドスクリプト (`build.ps1`, `verify_build.ps1`)
+- `notebooks/` - プロトタイプノートブック
+- `docs/development/` - 開発ドキュメント
+- `docs/distribution/` - 配布・ビルド手順書
+
 ## ローカル実行
 ```powershell
 streamlit run app.py
@@ -25,12 +34,22 @@ streamlit run app.py
 - 数値として解釈可能な値のみ
 
 ## 配布ビルド（PyInstaller / onedir）
+
+**推奨**: ビルドスクリプトを使用
+```powershell
+.\tools\build.ps1
+```
+
+**手動ビルド**（必要時のみ）:
 ```powershell
 .\.venv\Scripts\python -m PyInstaller `
   --noconfirm `
   --clean `
   --onedir `
   --name FluxBoundDesigner `
+  --add-data "app.py;." `
+  --add-data "src;src" `
+  --add-data "sample_data.csv;." `
   --collect-all streamlit `
   --collect-all plotly `
   --collect-all statsmodels `

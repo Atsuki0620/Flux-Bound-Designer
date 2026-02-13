@@ -1,13 +1,14 @@
-﻿# Flux Bound Designer ビルド手順書
+# Flux Bound Designer ビルド手順書
 
-このドキュメントは、Flux Bound Designer を Windows 環境でビルドし、配布可能な実行ファイル（`.exe`）を作成するための手順をまとめたものです。  
-日常運用では `build.ps1` を実行すれば必要な処理が一括で実行されるようにしています。
+このドキュメントは、Flux Bound Designer を Windows 環境でビルドし、配布可能な実行ファイル（`.exe`）を作成するための手順をまとめたものです。
+日常運用では `tools\build.ps1` を実行すれば必要な処理が一括で実行されるようにしています。
 
 ## 1. 前提条件
 - Windows 10/11
 - PowerShell
 - Python（プロジェクトで利用しているバージョン）
-- プロジェクトルートに `requirements.txt`、`build.ps1`、`verify_build.ps1` が存在すること
+- プロジェクトルートに `requirements.txt` が存在すること
+- `tools\` フォルダに `build.ps1`、`verify_build.ps1` が存在すること
 
 ## 2. 通常のビルド手順（推奨）
 まずは仮想環境を作成し、依存関係をインストールします。  
@@ -17,15 +18,15 @@
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-.\build.ps1
+.\tools\build.ps1
 ```
 
-`build.ps1` は以下を自動で実行します。
+`tools\build.ps1` は以下を自動で実行します。
 1. `pytest` によるテスト実行
 2. 構文チェック（`py_compile`）
 3. 既存の `build/`・`dist/`・`FluxBoundDesigner.spec` の削除
 4. PyInstaller による onedir ビルド
-5. `verify_build.ps1` による成果物検証
+5. `tools\verify_build.ps1` による成果物検証
 6. `dist\FluxBoundDesigner\README.txt` の生成
 
 ## 3. ビルド成果物の確認
@@ -39,7 +40,7 @@ pip install -r requirements.txt
 手動で検証する場合は、次を実行します。
 
 ```powershell
-.\verify_build.ps1
+.\tools\verify_build.ps1
 ```
 
 ## 4. 実行確認
@@ -58,14 +59,14 @@ pip install -r requirements.txt
 `dist/` と `build/` は通常 `.gitignore` 対象です。  
 そのため、GitHub からダウンロードした ZIP を会社PCで展開した直後は、`dist\FluxBoundDesigner` が存在しない前提で運用してください。
 
-つまり、会社PCでは **`.\build.ps1` の実行が必須** です。
+つまり、会社PCでは **`.\tools\build.ps1` の実行が必須** です。
 
 ### 5.1 会社PCでの最小手順
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-.\build.ps1
+.\tools\build.ps1
 ```
 
 ### 5.2 同僚へ渡すファイル
@@ -78,11 +79,11 @@ pip install -r requirements.txt
 3. 必要に応じて `http://localhost:8501` を開く
 
 ## 6. 今後の改良時の運用
-今後コードを更新する場合も手順は同じです。  
-変更後に `.\build.ps1` を再実行すれば、テスト・クリーン・ビルド・検証まで一貫して実施できます。
+今後コードを更新する場合も手順は同じです。
+変更後に `.\tools\build.ps1` を再実行すれば、テスト・クリーン・ビルド・検証まで一貫して実施できます。
 
 ## 7. 手動ビルドコマンド（必要時のみ）
-通常は `build.ps1` を使うため、以下は調査や切り分けが必要な場合のみ使用してください。
+通常は `tools\build.ps1` を使うため、以下は調査や切り分けが必要な場合のみ使用してください。
 
 ```powershell
 .\.venv\Scripts\python -m PyInstaller `
@@ -119,14 +120,14 @@ Get-NetTCPConnection -LocalPort 8501 -ErrorAction SilentlyContinue
 ### 8.3 `localhost` で 404 が出る
 - 同梱ファイル不足が主因のことが多い
 - `app.py` と `src` が `--add-data` で含まれているか確認
-- `.\verify_build.ps1` で必須ファイルを確認
+- `.\tools\verify_build.ps1` で必須ファイルを確認
 
 ### 8.4 ビルド成功表示なのに EXE がすぐ終了する
 一度クリーンして再ビルドしてください。
 
 ```powershell
 Remove-Item -Recurse -Force build, dist, FluxBoundDesigner.spec
-.\build.ps1
+.\tools\build.ps1
 ```
 
 

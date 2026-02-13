@@ -4,9 +4,12 @@
 - `app.py`: Streamlit UI本体（CSVアップロード、条件入力、解析実行、結果表示）
 - `src/analysis.py`: 解析ロジック（バリデーション、OLS回帰、予測区間、グラフ生成）
 - `tests/test_analysis.py`: `pytest` のテスト
-- `analysis_prototype.ipynb`: 仕様確認用Notebook
+- `notebooks/analysis_prototype.ipynb`: 仕様確認用Notebook
 - `sample_data.csv`: 動作確認用サンプルデータ
 - `run_streamlit_app.py`: PyInstaller配布用ランチャー
+- `tools/build.ps1`, `tools/verify_build.ps1`: ビルド・検証スクリプト
+- `docs/development/`: 開発ドキュメント
+- `docs/distribution/`: 配布・ビルド手順書
 
 ## 開発コマンド
 - `python -m venv .venv` / `.\\.venv\\Scripts\\Activate.ps1`: 仮想環境の作成・有効化
