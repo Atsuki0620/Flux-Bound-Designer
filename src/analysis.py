@@ -46,15 +46,19 @@ def analyze_dataframe(
     df: pd.DataFrame,
     min_ele_flow: float,
     max_ele_flow: float,
+    prediction_interval_pct: float = 95.0,
 ) -> tuple[AnalysisResult, pd.DataFrame, np.ndarray]:
     validated = validate_dataframe(df)
+    if not (0.0 < float(prediction_interval_pct) < 100.0):
+        raise ValueError("prediction_interval_pct must be between 0 and 100.")
 
     x = validated["F.S.Flux"].astype(float)
     y = validated["Ele.Flow"].astype(float)
     x_with_const = sm.add_constant(x)
 
     model = sm.OLS(y, x_with_const).fit()
-    pred_summary = model.get_prediction(x_with_const).summary_frame(alpha=0.05)
+    alpha = 1.0 - float(prediction_interval_pct) / 100.0
+    pred_summary = model.get_prediction(x_with_const).summary_frame(alpha=alpha)
 
     slope = float(model.params["F.S.Flux"])
     intercept = float(model.params["const"])
@@ -90,6 +94,7 @@ def build_figure(
     result: AnalysisResult,
     min_ele_flow: float,
     max_ele_flow: float,
+    prediction_interval_pct: float = 95.0,
 ) -> go.Figure:
     x = df["F.S.Flux"].astype(float)
     y = df["Ele.Flow"].astype(float)
@@ -120,14 +125,31 @@ def build_figure(
     ci_lower_line = lower_fit[0] * x_line + lower_fit[1]
     ci_upper_line = upper_fit[0] * x_line + upper_fit[1]
 
+    obs_ci_upper = pred_summary["obs_ci_upper"].to_numpy()
+    obs_ci_lower = pred_summary["obs_ci_lower"].to_numpy()
+    in_interval_mask = (y.to_numpy() <= obs_ci_upper) & (y.to_numpy() >= obs_ci_lower)
+    out_interval_mask = ~in_interval_mask
+
+    marker_y = y_plot_min + (y_plot_max - y_plot_min) * 0.04
+    marker_label_y = y_plot_min + (y_plot_max - y_plot_min) * 0.09
+
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
-            x=x,
-            y=y,
+            x=x[in_interval_mask],
+            y=y[in_interval_mask],
             mode="markers",
-            name="Observed",
-            marker=dict(size=8),
+            name="予測区間内",
+            marker=dict(size=8, color="rgba(0, 90, 180, 0.8)"),
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=x[out_interval_mask],
+            y=y[out_interval_mask],
+            mode="markers",
+            name="予測区間外",
+            marker=dict(size=8, color="rgba(198, 40, 40, 0.85)"),
         )
     )
     fig.add_trace(
@@ -135,7 +157,8 @@ def build_figure(
             x=x_line,
             y=reg_line,
             mode="lines",
-            name="Regression line",
+            line=dict(color="#1f77b4", width=3),
+            name="回帰直線",
         )
     )
     fig.add_trace(
@@ -155,55 +178,65 @@ def build_figure(
             mode="lines",
             line=dict(width=0),
             fill="tonexty",
-            fillcolor="rgba(31, 119, 180, 0.2)",
-            name="95% prediction interval",
+            fillcolor="rgba(31, 119, 180, 0.25)",
+            name=f"{float(prediction_interval_pct):g}% 予測区間",
         )
     )
 
-    fig.add_vline(
-        x=result.min_intersection,
-        line_dash="dash",
-        line_color="red",
+    fig.add_hline(y=float(max_ele_flow), line_dash="dash", line_color="#c62828", line_width=2)
+    fig.add_hline(y=float(min_ele_flow), line_dash="dash", line_color="#c62828", line_width=2)
+    fig.add_annotation(
+        x=x_plot_max,
+        y=float(max_ele_flow),
+        text="USL",
+        showarrow=False,
+        xanchor="left",
+        font=dict(color="#c62828"),
     )
-    fig.add_vline(
-        x=result.max_intersection,
-        line_dash="dash",
-        line_color="red",
+    fig.add_annotation(
+        x=x_plot_max,
+        y=float(min_ele_flow),
+        text="LSL",
+        showarrow=False,
+        xanchor="left",
+        font=dict(color="#c62828"),
     )
-    fig.add_trace(
-        go.Scatter(
-            x=[x_plot_min, x_plot_max],
-            y=[float(min_ele_flow), float(min_ele_flow)],
-            mode="lines",
-            name="Ele.Flow上下限",
-            line=dict(color="blue", width=2),
+
+    if np.isfinite(result.min_intersection) and np.isfinite(result.max_intersection):
+        fig.add_vline(x=result.min_intersection, line_dash="dot", line_color="#2e7d32", line_width=1)
+        fig.add_vline(x=result.max_intersection, line_dash="dot", line_color="#2e7d32", line_width=1)
+        fig.add_trace(
+            go.Scatter(
+                x=[result.min_intersection, result.max_intersection],
+                y=[marker_y, marker_y],
+                mode="lines+markers",
+                line=dict(color="#2e7d32", width=12),
+                marker=dict(size=10, color="#2e7d32"),
+                name="推奨 F.S.Flux 範囲",
+            )
         )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=[x_plot_min, x_plot_max],
-            y=[float(max_ele_flow), float(max_ele_flow)],
-            mode="lines",
-            name="Ele.Flow上下限",
-            showlegend=False,
-            line=dict(color="blue", width=2),
+        fig.add_annotation(
+            x=(result.min_intersection + result.max_intersection) / 2.0,
+            y=marker_label_y,
+            text=f"推奨範囲: {result.min_intersection:.2f} - {result.max_intersection:.2f}",
+            showarrow=False,
+            font=dict(color="#1b5e20"),
         )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=[result.min_intersection, result.max_intersection],
-            y=[float(min_ele_flow), float(max_ele_flow)],
-            mode="markers",
-            showlegend=False,
-            marker=dict(size=14, color="red", line=dict(color="black", width=1)),
+    else:
+        fig.add_annotation(
+            x=(x_plot_min + x_plot_max) / 2.0,
+            y=marker_label_y,
+            text="この条件では推奨範囲がありません",
+            showarrow=False,
+            font=dict(color="#b71c1c"),
         )
-    )
+
     fig.update_layout(
         title="F.S.Flux と Ele.Flow の分析結果",
         xaxis_title="F.S.Flux",
         yaxis_title="Ele.Flow",
         template="plotly_white",
-        height=760,
+        height=560,
         font=dict(size=18),
         title_font=dict(size=26),
         legend=dict(font=dict(size=16)),

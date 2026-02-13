@@ -1,7 +1,10 @@
 import io
 import time
+from statistics import NormalDist
 
+import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 from src.analysis import analyze_dataframe, build_figure, validate_dataframe
@@ -31,25 +34,211 @@ def update_progress(progress_bar, status_box, value: int, message: str) -> None:
     status_box.info(f"進捗: {value}% - {message}")
 
 
-st.title("Flux Bound Designer")
-st.caption("Upload a CSV file to visualize the regression line, 95% prediction interval, and intersections with Ele.Flow bounds.")
+def draw_section_divider() -> None:
+    st.markdown(
+        "<hr style='border:0; border-top:1px solid #e7e7e7; margin:0.8rem 0 1.2rem 0;'>",
+        unsafe_allow_html=True,
+    )
+
+
+def get_confidence_comment(confidence_pct: float) -> str:
+    if confidence_pct >= 99.0:
+        return "安全重視の設定です。帯が太くなり、推奨 F.S.Flux 範囲はかなり狭くなります。"
+    if confidence_pct >= 95.0:
+        return "バランス型の設定です。実務でよく使われる安全側の目安です。"
+    if confidence_pct >= 90.0:
+        return "やや攻めた設定です。推奨範囲は広がりやすい一方で取りこぼしリスクは上がります。"
+    return "攻めた設定です。帯は細くなりますが、ばらつきの取りこぼしリスクが高まります。"
+
+
+def build_prediction_interval_simulation_figure(confidence_pct: float) -> tuple[go.Figure, int, int]:
+    # Simulation constants for an intuitive manufacturing example.
+    lsl = 9200.0
+    usl = 12600.0
+    slope = 4700.0
+    intercept = 5000.0
+    x_min, x_max = 0.8, 1.8
+    x_plot_min, x_plot_max = 0.8, 1.8
+
+    rng = np.random.default_rng(7)
+    x_obs = np.linspace(x_min, x_max, 100)
+    x_center = (x_min + x_max) / 2.0
+    obs_noise_sigma = 260.0 + 140.0 * ((x_obs - x_center) ** 2)
+    y_obs = slope * x_obs + intercept + rng.normal(0.0, obs_noise_sigma, size=x_obs.size)
+
+    x_line = np.linspace(x_plot_min, x_plot_max, 320)
+    y_line = slope * x_line + intercept
+
+    z = NormalDist().inv_cdf(0.5 + float(confidence_pct) / 200.0)
+    pred_sigma = 240.0 + 45.0 * ((x_line - x_center) ** 2)
+    band_half = z * pred_sigma
+    pi_upper = y_line + band_half
+    pi_lower = y_line - band_half
+
+    obs_pi_upper = np.interp(x_obs, x_line, pi_upper)
+    obs_pi_lower = np.interp(x_obs, x_line, pi_lower)
+    in_interval_mask = (y_obs <= obs_pi_upper) & (y_obs >= obs_pi_lower)
+    in_count = int(np.count_nonzero(in_interval_mask))
+    out_count = int(x_obs.size - in_count)
+
+    valid_mask = (pi_upper <= usl) & (pi_lower >= lsl)
+    has_valid = bool(np.any(valid_mask))
+    if has_valid:
+        x_recommended = x_line[valid_mask]
+        rec_x_min = float(x_recommended.min())
+        rec_x_max = float(x_recommended.max())
+    else:
+        rec_x_min = rec_x_max = None
+
+    marker_y = 8120.0
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=x_obs[in_interval_mask],
+            y=y_obs[in_interval_mask],
+            mode="markers",
+            marker=dict(color="rgba(0, 90, 180, 0.8)", size=7),
+            name="予測区間内",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=x_obs[~in_interval_mask],
+            y=y_obs[~in_interval_mask],
+            mode="markers",
+            marker=dict(color="rgba(198, 40, 40, 0.85)", size=7),
+            name="予測区間外",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=x_line,
+            y=y_line,
+            mode="lines",
+            line=dict(color="#1f77b4", width=3),
+            name="回帰直線",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=x_line,
+            y=pi_upper,
+            mode="lines",
+            line=dict(width=0),
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=x_line,
+            y=pi_lower,
+            mode="lines",
+            fill="tonexty",
+            fillcolor="rgba(31, 119, 180, 0.25)",
+            line=dict(width=0),
+            name=f"{confidence_pct:.1f}% 予測区間",
+        )
+    )
+    fig.add_hline(y=usl, line_dash="dash", line_color="#c62828", line_width=2)
+    fig.add_hline(y=lsl, line_dash="dash", line_color="#c62828", line_width=2)
+    fig.add_annotation(x=x_plot_max, y=usl, text="USL", showarrow=False, xanchor="left", font=dict(color="#c62828"))
+    fig.add_annotation(x=x_plot_max, y=lsl, text="LSL", showarrow=False, xanchor="left", font=dict(color="#c62828"))
+
+    if has_valid:
+        fig.add_vline(x=rec_x_min, line_dash="dot", line_color="#2e7d32", line_width=1)
+        fig.add_vline(x=rec_x_max, line_dash="dot", line_color="#2e7d32", line_width=1)
+        fig.add_trace(
+            go.Scatter(
+                x=[rec_x_min, rec_x_max],
+                y=[marker_y, marker_y],
+                mode="lines+markers",
+                line=dict(color="#2e7d32", width=12),
+                marker=dict(size=10, color="#2e7d32"),
+                name="推奨 F.S.Flux 範囲",
+            )
+        )
+        fig.add_annotation(
+            x=(rec_x_min + rec_x_max) / 2.0,
+            y=8380.0,
+            text=f"推奨範囲: {rec_x_min:.2f} - {rec_x_max:.2f}",
+            showarrow=False,
+            font=dict(color="#1b5e20"),
+        )
+    else:
+        fig.add_annotation(
+            x=(x_min + x_max) / 2.0,
+            y=8380.0,
+            text="この条件では推奨範囲がありません",
+            showarrow=False,
+            font=dict(color="#b71c1c"),
+        )
+
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        template="plotly_white",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
+    )
+    fig.update_xaxes(title="F.S.Flux", range=[x_plot_min, x_plot_max])
+    fig.update_yaxes(title="Ele.Flow", range=[8000.0, 14000.0], tickformat=",.0f")
+    return fig, in_count, out_count
+
+
+st.title("📈 Flux Bound Designer")
+st.markdown(
+    "<p style='font-size:1.08rem; color:#111111; margin-top:-0.25rem;'>"
+    "実測データのバラツキから将来の変動を考慮し、エレメント規格を満たせる平膜の推奨範囲を算出します。"
+    "</p>",
+    unsafe_allow_html=True,
+)
+
+with st.expander("📘 予測区間とは？（シミュレーション）"):
+    left_col, right_col = st.columns([1, 2])
+    with left_col:
+        sim_confidence_pct = st.slider(
+            "予測区間の信頼係数（%）",
+            min_value=50,
+            max_value=99,
+            value=95,
+            step=1,
+        )
+        st.write(get_confidence_comment(sim_confidence_pct))
+        st.markdown(
+            "- 「データのばらつきをどれだけカバーするか」を決める設定です。\n"
+            "- %を上げる→安全だが推奨範囲が狭くなる\n"
+            "- %を下げる→推奨範囲は広がるがリスク増\n"
+            "- 95%が一般的ですが業務に応じて調整してください。"
+        )
+        sim_fig, sim_in_count, sim_out_count = build_prediction_interval_simulation_figure(sim_confidence_pct)
+        total_count = sim_in_count + sim_out_count
+        st.markdown(f'<span style="color: rgba(0, 90, 180, 0.8);">予測区間内 ●: {sim_in_count} 点</span>', unsafe_allow_html=True)
+        st.markdown(f'<span style="color: rgba(198, 40, 40, 0.85);">予測区間外 ●: {sim_out_count} 点</span>', unsafe_allow_html=True)
+        st.write(f"区間内の比率: {sim_in_count / total_count * 100:.1f}%")
+    with right_col:
+        st.plotly_chart(
+            sim_fig,
+            use_container_width=True,
+        )
 
 template_bytes = build_template_csv_bytes()
+draw_section_divider()
 
-st.subheader("ステップ1: CSVテンプレートをダウンロード")
-st.write("ステップ1: CSVテンプレートをダウンロードして、F.S.Flux と Ele.Flow の2列でデータを準備してください。")
+st.subheader("📥 ステップ1")
+st.write("CSVテンプレートをダウンロードして、F.S.Flux と Ele.Flow の2列でデータを準備してください。")
 st.download_button(
-    label="テンプレートCSVをダウンロード",
+    label="📄 テンプレートCSVをダウンロード",
     data=template_bytes,
     file_name="template_fsflux_eleflow.csv",
     mime="text/csv",
     use_container_width=True,
 )
+draw_section_divider()
 
-st.subheader("ステップ2: CSVをアップロード")
-st.write("ステップ2: 作成したCSVファイルをアップロードしてください。")
+st.subheader("📂 ステップ2")
+st.write("作成したCSVファイルをアップロードしてください。")
 uploaded_file = st.file_uploader(
-    "解析に使うCSVファイルを選択してください",
+    "ドラッグ&ドロップ、またはクリックしてファイルを選択",
     type=["csv"],
     label_visibility="visible",
 )
@@ -57,22 +246,64 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
     try:
         preview_df = read_uploaded_csv(uploaded_file)
-        st.subheader("アップロード済みデータ")
+        st.subheader("🗂️ アップロード済みデータ")
         st.dataframe(preview_df, use_container_width=True, height=200)
     except Exception as exc:
         st.error(f"CSVの読み込みに失敗しました: {exc}")
+draw_section_divider()
 
-st.subheader("ステップ3: 解析条件を入力")
-st.write("ステップ3: Min_Ele_Flow（下限）と Max_Ele_Flow（上限）を入力してください。")
-input_col1, input_col2, input_col3 = st.columns([1, 1, 1.2])
+st.subheader("🎯 ステップ3")
+st.write("解析条件を設定してください。")
+input_col1, input_col2, input_col3, input_col4, input_col5 = st.columns([1, 1, 1.8, 1.1, 1.0])
 with input_col1:
     min_ele_flow = st.number_input("Min_Ele_Flow（下限）", value=8800.0, step=0.1)
 with input_col2:
     max_ele_flow = st.number_input("Max_Ele_Flow（上限）", value=13200.0, step=0.1)
 with input_col3:
+    prediction_interval_option = st.radio(
+        "予測区間（%）",
+        options=["68%", "90%", "95%", "99.7%", "カスタム"],
+        index=2,
+        horizontal=True,
+    )
+with input_col4:
+    custom_prediction_interval_pct = st.number_input(
+        "カスタム予測区間（%）",
+        min_value=0.1,
+        max_value=99.9,
+        value=95.0,
+        step=0.1,
+        format="%.1f",
+        disabled=prediction_interval_option != "カスタム",
+    )
+with input_col5:
     st.write("")
     st.write("")
-    run_clicked = st.button("解析実行", type="primary", use_container_width=True)
+    run_clicked = st.button("🚀 解析実行", type="primary", use_container_width=True)
+
+if prediction_interval_option == "カスタム":
+    prediction_interval_pct = float(custom_prediction_interval_pct)
+else:
+    prediction_interval_pct = float(prediction_interval_option.replace("%", ""))
+
+st.markdown(
+    """
+    <style>
+    div[data-testid="stButton"] > button {
+        background-color: #0b6e4f;
+        color: #ffffff;
+        border: 1px solid #09553d;
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+    div[data-testid="stButton"] > button:hover {
+        background-color: #09553d;
+        color: #ffffff;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 if run_clicked:
     if uploaded_file is None:
@@ -99,6 +330,7 @@ if run_clicked:
                 validated_df,
                 min_ele_flow=min_ele_flow,
                 max_ele_flow=max_ele_flow,
+                prediction_interval_pct=prediction_interval_pct,
             )
             time.sleep(0.08)
 
@@ -110,17 +342,21 @@ if run_clicked:
                 result,
                 min_ele_flow=min_ele_flow,
                 max_ele_flow=max_ele_flow,
+                prediction_interval_pct=prediction_interval_pct,
             )
             time.sleep(0.08)
 
             update_progress(progress_bar, status_box, 100, "完了")
             st.success("解析が完了しました。")
-            st.subheader("解析結果")
-            st.write(f"回帰式: y = {result.slope:.3f}x {result.intercept:+.3f}")
-            st.write(f"決定係数 R^2: {result.r_squared:.3f}")
-            st.write(f"min_intersection: {result.min_intersection:.3f}")
-            st.write(f"max_intersection: {result.max_intersection:.3f}")
-            st.plotly_chart(fig, use_container_width=True)
+            st.subheader("✅ 解析結果")
+            result_col_left, result_col_right = st.columns([1, 2])
+            with result_col_left:
+                st.write(f"回帰式: y = {result.slope:.3f}x {result.intercept:+.3f}")
+                st.write(f"決定係数 R^2: {result.r_squared:.3f}")
+                st.write(f"予測区間: {prediction_interval_pct:g}%")
+                st.write(f"推奨平膜規格範囲 F.S.Flux: {result.min_intersection:.3f} ～ {result.max_intersection:.3f}")
+            with result_col_right:
+                st.plotly_chart(fig, use_container_width=True)
         except Exception as exc:
             status_box.empty()
             progress_bar.empty()
