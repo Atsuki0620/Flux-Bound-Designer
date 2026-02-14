@@ -63,14 +63,17 @@ def build_prediction_interval_simulation_figure(confidence_pct: float) -> tuple[
     rng = np.random.default_rng(7)
     x_obs = np.linspace(x_min, x_max, 100)
     x_center = (x_min + x_max) / 2.0
-    obs_noise_sigma = 260.0 + 140.0 * ((x_obs - x_center) ** 2)
+    # 予測区間のシグマと観測ノイズを一致させる
+    base_sigma = 240.0
+    sigma_variation = 45.0
+    obs_noise_sigma = base_sigma + sigma_variation * ((x_obs - x_center) ** 2)
     y_obs = slope * x_obs + intercept + rng.normal(0.0, obs_noise_sigma, size=x_obs.size)
 
     x_line = np.linspace(x_plot_min, x_plot_max, 320)
     y_line = slope * x_line + intercept
 
     z = NormalDist().inv_cdf(0.5 + float(confidence_pct) / 200.0)
-    pred_sigma = 240.0 + 45.0 * ((x_line - x_center) ** 2)
+    pred_sigma = base_sigma + sigma_variation * ((x_line - x_center) ** 2)
     band_half = z * pred_sigma
     pi_upper = y_line + band_half
     pi_lower = y_line - band_half
@@ -221,24 +224,9 @@ with st.expander("【説明】平膜Flux範囲の算出方法"):
         sim_fig, sim_in_count, sim_out_count = build_prediction_interval_simulation_figure(sim_confidence_pct)
         total_count = sim_in_count + sim_out_count
 
-        # 統計情報の改善表示
-        st.markdown("**統計情報**")
-        col_a, col_b = st.columns(2)
-        with col_a:
-            st.metric(
-                label="予測区間内",
-                value=f"{sim_in_count}点",
-            )
-            st.markdown('<span style="color: rgba(0, 90, 180, 0.8);">●</span>', unsafe_allow_html=True)
-        with col_b:
-            st.metric(
-                label="予測区間外",
-                value=f"{sim_out_count}点",
-            )
-            st.markdown('<span style="color: rgba(198, 40, 40, 0.85);">●</span>', unsafe_allow_html=True)
-
+        st.markdown(f'<span style="color: rgba(0, 90, 180, 0.8);">予測区間内 ●: {sim_in_count} 点</span>', unsafe_allow_html=True)
+        st.markdown(f'<span style="color: rgba(198, 40, 40, 0.85);">予測区間外 ●: {sim_out_count} 点</span>', unsafe_allow_html=True)
         st.write(f"区間内の比率: {sim_in_count / total_count * 100:.1f}%")
-        st.info(get_confidence_comment(sim_confidence_pct))
 
     with right_col:
         st.plotly_chart(
