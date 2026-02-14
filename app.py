@@ -43,11 +43,11 @@ def draw_section_divider() -> None:
 
 def get_confidence_comment(confidence_pct: float) -> str:
     if confidence_pct >= 99.0:
-        return "安全重視の設定です。帯が太くなり、推奨 F.S.Flux 範囲はかなり狭くなります。"
+        return "安全重視の設定です。帯が太くなり、F.S.Flux 範囲はかなり狭くなります。"
     if confidence_pct >= 95.0:
         return "バランス型の設定です。実務でよく使われる安全側の目安です。"
     if confidence_pct >= 90.0:
-        return "やや攻めた設定です。推奨範囲は広がりやすい一方で取りこぼしリスクは上がります。"
+        return "やや攻めた設定です。範囲は広がりやすい一方で取りこぼしリスクは上がります。"
     return "攻めた設定です。帯は細くなりますが、ばらつきの取りこぼしリスクが高まります。"
 
 
@@ -143,8 +143,8 @@ def build_prediction_interval_simulation_figure(confidence_pct: float) -> tuple[
     )
     fig.add_hline(y=usl, line_dash="dash", line_color="#c62828", line_width=2)
     fig.add_hline(y=lsl, line_dash="dash", line_color="#c62828", line_width=2)
-    fig.add_annotation(x=x_plot_max, y=usl, text="USL", showarrow=False, xanchor="left", font=dict(color="#c62828"))
-    fig.add_annotation(x=x_plot_max, y=lsl, text="LSL", showarrow=False, xanchor="left", font=dict(color="#c62828"))
+    fig.add_annotation(x=x_plot_max, y=usl, text="上限", showarrow=False, xanchor="left", font=dict(color="#c62828"))
+    fig.add_annotation(x=x_plot_max, y=lsl, text="下限", showarrow=False, xanchor="left", font=dict(color="#c62828"))
 
     if has_valid:
         fig.add_vline(x=rec_x_min, line_dash="dot", line_color="#2e7d32", line_width=1)
@@ -156,13 +156,13 @@ def build_prediction_interval_simulation_figure(confidence_pct: float) -> tuple[
                 mode="lines+markers",
                 line=dict(color="#2e7d32", width=12),
                 marker=dict(size=10, color="#2e7d32"),
-                name="推奨 F.S.Flux 範囲",
+                name="平膜Flux範囲",
             )
         )
         fig.add_annotation(
             x=(rec_x_min + rec_x_max) / 2.0,
             y=8380.0,
-            text=f"推奨範囲: {rec_x_min:.2f} - {rec_x_max:.2f}",
+            text=f"範囲: {rec_x_min:.2f} - {rec_x_max:.2f}",
             showarrow=False,
             font=dict(color="#1b5e20"),
         )
@@ -170,7 +170,7 @@ def build_prediction_interval_simulation_figure(confidence_pct: float) -> tuple[
         fig.add_annotation(
             x=(x_min + x_max) / 2.0,
             y=8380.0,
-            text="この条件では推奨範囲がありません",
+            text="この条件では範囲がありません",
             showarrow=False,
             font=dict(color="#b71c1c"),
         )
@@ -188,33 +188,58 @@ def build_prediction_interval_simulation_figure(confidence_pct: float) -> tuple[
 st.title("📈 Flux Bound Designer")
 st.markdown(
     "<p style='font-size:1.08rem; color:#111111; margin-top:-0.25rem;'>"
-    "実測データのバラツキから将来の変動を考慮し、エレメント規格を満たせる平膜の推奨範囲を算出します。"
+    "実測データのバラツキから将来の変動を考慮し、エレメント規格を満たせる平膜の範囲を算出します。"
     "</p>",
     unsafe_allow_html=True,
 )
 
-with st.expander("📘 予測区間とは？（シミュレーション）"):
+with st.expander("【説明】平膜Flux範囲の算出方法"):
     left_col, right_col = st.columns([1, 2])
     with left_col:
+        # 概念説明
+        st.markdown(
+            "本ツールは実測データから回帰直線と予測区間を算出し、"
+            "エレメント規格（下限・上限）を満たす平膜Flux範囲を導出します。"
+            "予測区間は将来のばらつきを考慮した範囲を示し、"
+            "予測水準（%）が高いほど安全側の設定となりますが範囲は狭くなります。"
+            "下記のスライダーで予測水準を変更すると、グラフ上の範囲がどう変化するかシミュレーションできます。"
+        )
+
+        # 区切り線
+        st.markdown("---")
+
+        # スライダー
         sim_confidence_pct = st.slider(
-            "予測区間の信頼係数（%）",
+            "予測水準（%）",
             min_value=50,
             max_value=99,
             value=95,
             step=1,
         )
-        st.write(get_confidence_comment(sim_confidence_pct))
-        st.markdown(
-            "- 「データのばらつきをどれだけカバーするか」を決める設定です。\n"
-            "- %を上げる→安全だが推奨範囲が狭くなる\n"
-            "- %を下げる→推奨範囲は広がるがリスク増\n"
-            "- 95%が一般的ですが業務に応じて調整してください。"
-        )
+
+        # グラフ作成
         sim_fig, sim_in_count, sim_out_count = build_prediction_interval_simulation_figure(sim_confidence_pct)
         total_count = sim_in_count + sim_out_count
-        st.markdown(f'<span style="color: rgba(0, 90, 180, 0.8);">予測区間内 ●: {sim_in_count} 点</span>', unsafe_allow_html=True)
-        st.markdown(f'<span style="color: rgba(198, 40, 40, 0.85);">予測区間外 ●: {sim_out_count} 点</span>', unsafe_allow_html=True)
+
+        # 統計情報の改善表示
+        st.markdown("**統計情報**")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.metric(
+                label="予測区間内",
+                value=f"{sim_in_count}点",
+            )
+            st.markdown('<span style="color: rgba(0, 90, 180, 0.8);">●</span>', unsafe_allow_html=True)
+        with col_b:
+            st.metric(
+                label="予測区間外",
+                value=f"{sim_out_count}点",
+            )
+            st.markdown('<span style="color: rgba(198, 40, 40, 0.85);">●</span>', unsafe_allow_html=True)
+
         st.write(f"区間内の比率: {sim_in_count / total_count * 100:.1f}%")
+        st.info(get_confidence_comment(sim_confidence_pct))
+
     with right_col:
         st.plotly_chart(
             sim_fig,
@@ -253,22 +278,22 @@ if uploaded_file is not None:
 draw_section_divider()
 
 st.subheader("🎯 ステップ3")
-st.write("解析条件を設定してください。")
+st.write("分析条件を設定してください。")
 input_col1, input_col2, input_col3, input_col4, input_col5 = st.columns([1, 1, 1.8, 1.1, 1.0])
 with input_col1:
-    min_ele_flow = st.number_input("Min_Ele_Flow（下限）", value=8800.0, step=0.1)
+    min_ele_flow = st.number_input("エレメントFlow下限", value=8800.0, step=0.1)
 with input_col2:
-    max_ele_flow = st.number_input("Max_Ele_Flow（上限）", value=13200.0, step=0.1)
+    max_ele_flow = st.number_input("エレメントFlow上限", value=13200.0, step=0.1)
 with input_col3:
     prediction_interval_option = st.radio(
-        "予測区間（%）",
+        "予測水準（%）",
         options=["68%", "90%", "95%", "99.7%", "カスタム"],
         index=2,
         horizontal=True,
     )
 with input_col4:
     custom_prediction_interval_pct = st.number_input(
-        "カスタム予測区間（%）",
+        "カスタム予測水準（%）",
         min_value=0.1,
         max_value=99.9,
         value=95.0,
@@ -279,7 +304,7 @@ with input_col4:
 with input_col5:
     st.write("")
     st.write("")
-    run_clicked = st.button("🚀 解析実行", type="primary", use_container_width=True)
+    run_clicked = st.button("🚀 分析実行", type="primary", use_container_width=True)
 
 if prediction_interval_option == "カスタム":
     prediction_interval_pct = float(custom_prediction_interval_pct)
@@ -347,17 +372,17 @@ if run_clicked:
             time.sleep(0.08)
 
             update_progress(progress_bar, status_box, 100, "完了")
-            st.success("解析が完了しました。")
-            st.subheader("✅ 解析結果")
+            st.success("分析が完了しました。")
+            st.subheader("✅ 分析結果")
             result_col_left, result_col_right = st.columns([1, 2])
             with result_col_left:
                 st.write(f"回帰式: y = {result.slope:.3f}x {result.intercept:+.3f}")
                 st.write(f"決定係数 R^2: {result.r_squared:.3f}")
                 st.write(f"予測区間: {prediction_interval_pct:g}%")
-                st.write(f"推奨平膜規格範囲 F.S.Flux: {result.min_intersection:.3f} ～ {result.max_intersection:.3f}")
+                st.write(f"平膜Flux範囲: {result.min_intersection:.3f} ～ {result.max_intersection:.3f}")
             with result_col_right:
                 st.plotly_chart(fig, use_container_width=True)
         except Exception as exc:
             status_box.empty()
             progress_bar.empty()
-            st.error(f"解析に失敗しました: {exc}")
+            st.error(f"分析に失敗しました: {exc}")
