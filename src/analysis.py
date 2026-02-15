@@ -188,7 +188,7 @@ def build_figure(
     fig.add_annotation(
         x=x_plot_max,
         y=float(max_ele_flow),
-        text="USL",
+        text="上限",
         showarrow=False,
         xanchor="left",
         font=dict(color="#c62828"),
@@ -196,7 +196,7 @@ def build_figure(
     fig.add_annotation(
         x=x_plot_max,
         y=float(min_ele_flow),
-        text="LSL",
+        text="下限",
         showarrow=False,
         xanchor="left",
         font=dict(color="#c62828"),
@@ -212,13 +212,13 @@ def build_figure(
                 mode="lines+markers",
                 line=dict(color="#2e7d32", width=12),
                 marker=dict(size=10, color="#2e7d32"),
-                name="推奨 F.S.Flux 範囲",
+                name="平膜Flux範囲",
             )
         )
         fig.add_annotation(
             x=(result.min_intersection + result.max_intersection) / 2.0,
             y=marker_label_y,
-            text=f"推奨範囲: {result.min_intersection:.2f} - {result.max_intersection:.2f}",
+            text=f"範囲: {result.min_intersection:.2f} - {result.max_intersection:.2f}",
             showarrow=False,
             font=dict(color="#1b5e20"),
         )
@@ -226,20 +226,25 @@ def build_figure(
         fig.add_annotation(
             x=(x_plot_min + x_plot_max) / 2.0,
             y=marker_label_y,
-            text="この条件では推奨範囲がありません",
+            text="この条件では範囲がありません",
             showarrow=False,
             font=dict(color="#b71c1c"),
         )
 
     fig.update_layout(
-        title="F.S.Flux と Ele.Flow の分析結果",
         xaxis_title="F.S.Flux",
         yaxis_title="Ele.Flow",
         template="plotly_white",
         height=560,
         font=dict(size=18),
-        title_font=dict(size=26),
-        legend=dict(font=dict(size=16)),
+        legend=dict(
+            font=dict(size=16),
+            orientation="h",      # 横並び
+            yanchor="bottom",     # 下端を基準
+            y=1.02,              # グラフの上部に配置
+            xanchor="left",      # 左端を基準
+            x=0.0                # 左端から配置
+        ),
     )
     fig.update_xaxes(range=[x_plot_min, x_plot_max])
     fig.update_yaxes(

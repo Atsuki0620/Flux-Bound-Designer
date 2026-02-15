@@ -94,7 +94,7 @@ def test_build_figure_uses_simulation_aligned_styles() -> None:
     assert "予測区間外" in trace_names
     assert "回帰直線" in trace_names
     assert "95% 予測区間" in trace_names
-    assert "推奨 F.S.Flux 範囲" in trace_names
+    assert "平膜Flux範囲" in trace_names
 
     shapes = list(fig.layout.shapes or [])
     red_dash_horizontal = [
@@ -111,6 +111,6 @@ def test_build_figure_uses_simulation_aligned_styles() -> None:
     assert len(green_dot_vertical) == 2
 
     annotation_texts = [a.text for a in (fig.layout.annotations or [])]
-    assert "USL" in annotation_texts
-    assert "LSL" in annotation_texts
-    assert any(text.startswith("推奨範囲:") for text in annotation_texts if text)
+    assert "上限" in annotation_texts
+    assert "下限" in annotation_texts
+    assert any(text.startswith("範囲:") for text in annotation_texts if text)
