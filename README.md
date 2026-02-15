@@ -1,4 +1,4 @@
-# Flux Bound Designer
+# Flux規格提案くん
 
 Streamlit app for regression analysis of F.S.Flux vs Ele.Flow, visualizing regression line, 95% prediction interval, and intersections with Ele.Flow bounds.
 
@@ -46,7 +46,7 @@ streamlit run app.py
   --noconfirm `
   --clean `
   --onedir `
-  --name FluxBoundDesigner `
+  --name AppStart `
   --add-data "app.py;." `
   --add-data "src;src" `
   --add-data "sample_data.csv;." `
@@ -59,11 +59,11 @@ streamlit run app.py
 ```
 
 出力先:
-- `dist\FluxBoundDesigner\FluxBoundDesigner.exe`
+- `dist\AppStart\AppStart.exe`
 
 ## 配布物の起動
 ```powershell
-.\dist\FluxBoundDesigner\FluxBoundDesigner.exe
+.\dist\AppStart\AppStart.exe
 ```
 起動後、ブラウザで `http://localhost:8501` を開いて利用します。
 

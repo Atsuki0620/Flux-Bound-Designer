@@ -34,7 +34,7 @@ Write-Host "[2/6] Running syntax check..."
 Invoke-PythonChecked -Args @("-m", "py_compile", "app.py", "src\analysis.py", "run_streamlit_app.py")
 
 Write-Host "[3/6] Cleaning old build outputs..."
-$pathsToRemove = @("build", "dist", "FluxBoundDesigner.spec")
+$pathsToRemove = @("build", "dist", "AppStart.spec")
 foreach ($path in $pathsToRemove) {
     if (Test-Path $path) {
         Remove-Item -Recurse -Force $path
@@ -47,7 +47,7 @@ Invoke-PythonChecked -Args @(
     "--noconfirm",
     "--clean",
     "--onedir",
-    "--name", "FluxBoundDesigner",
+    "--name", "AppStart",
     "--add-data", "app.py;.",
     "--add-data", "src;src",
     "--add-data", "sample_data.csv;.",
@@ -67,7 +67,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "[6/6] Writing dist README from template..."
 $templatePath = Join-Path $projectRoot "tools\templates\README.txt"
-$readmePath = Join-Path $projectRoot "dist\FluxBoundDesigner\README.txt"
+$readmePath = Join-Path $projectRoot "dist\AppStart\README.txt"
 
 if (-not (Test-Path $templatePath)) {
     throw "Template file not found: $templatePath"
@@ -77,4 +77,4 @@ Copy-Item -Path $templatePath -Destination $readmePath -Force
 
 Write-Host ""
 Write-Host "Build completed successfully."
-Write-Host "Output: dist\FluxBoundDesigner\FluxBoundDesigner.exe"
+Write-Host "Output: dist\AppStart\AppStart.exe"

@@ -6,11 +6,11 @@
 - `python -m pytest -q` が成功
 
 ## ビルド
-- `python -m PyInstaller --onedir --name FluxBoundDesigner ... run_streamlit_app.py` が成功
-- `dist\FluxBoundDesigner\FluxBoundDesigner.exe` が生成される
+- `python -m PyInstaller --onedir --name AppStart ... run_streamlit_app.py` が成功
+- `dist\AppStart\AppStart.exe` が生成される
 
 ## 配布物の確認
-- `FluxBoundDesigner.exe` 起動でアプリが開く
+- `AppStart.exe` 起動でアプリが開く
 - `sample_data.csv` で解析実行できる
 - 進捗バーが 0% -> 100% で動く
 - グラフ表示が Notebook と一致する
