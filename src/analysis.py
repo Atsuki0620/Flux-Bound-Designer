@@ -237,7 +237,14 @@ def build_figure(
         template="plotly_white",
         height=560,
         font=dict(size=18),
-        legend=dict(font=dict(size=16)),
+        legend=dict(
+            font=dict(size=16),
+            orientation="h",      # 横並び
+            yanchor="bottom",     # 下端を基準
+            y=1.02,              # グラフの上部に配置
+            xanchor="left",      # 左端を基準
+            x=0.0                # 左端から配置
+        ),
     )
     fig.update_xaxes(range=[x_plot_min, x_plot_max])
     fig.update_yaxes(

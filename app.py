@@ -345,6 +345,17 @@ if run_clicked:
                 max_ele_flow=max_ele_flow,
                 prediction_interval_pct=prediction_interval_pct,
             )
+
+            # 点数計算（予測区間内/区間外）
+            obs_ci_upper = pred_summary["obs_ci_upper"].to_numpy()
+            obs_ci_lower = pred_summary["obs_ci_lower"].to_numpy()
+            y_values = validated_df["Ele.Flow"].to_numpy()
+            in_interval_mask = (y_values <= obs_ci_upper) & (y_values >= obs_ci_lower)
+
+            in_count = int(np.count_nonzero(in_interval_mask))
+            out_count = int(len(y_values) - in_count)
+            ratio = in_count / len(y_values) * 100.0
+
             time.sleep(0.08)
 
             update_progress(progress_bar, status_box, 85, "グラフを作成中")
@@ -366,8 +377,14 @@ if run_clicked:
             with result_col_left:
                 st.write(f"回帰式: y = {result.slope:.3f}x {result.intercept:+.3f}")
                 st.write(f"決定係数 R^2: {result.r_squared:.3f}")
-                st.write(f"予測区間: {prediction_interval_pct:g}%")
+                st.write(f"予測水準: {prediction_interval_pct:g}%")
                 st.write(f"平膜Flux範囲: {result.min_intersection:.3f} ～ {result.max_intersection:.3f}")
+
+                # 点数表示を追加
+                st.write("")  # 空行
+                st.markdown(f'<span style="color: rgba(0, 90, 180, 0.8);">予測区間内 ●: {in_count} 点</span>', unsafe_allow_html=True)
+                st.markdown(f'<span style="color: rgba(198, 40, 40, 0.85);">予測区間外 ●: {out_count} 点</span>', unsafe_allow_html=True)
+                st.write(f"区間内の比率: {ratio:.1f}%")
             with result_col_right:
                 st.plotly_chart(fig, use_container_width=True)
         except Exception as exc:
