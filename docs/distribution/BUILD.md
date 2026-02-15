@@ -1,6 +1,6 @@
-# Flux Bound Designer ビルド手順書
+# Flux規格提案くん ビルド手順書
 
-このドキュメントは、Flux Bound Designer を Windows 環境でビルドし、配布可能な実行ファイル（`.exe`）を作成するための手順をまとめたものです。
+このドキュメントは、Flux規格提案くん を Windows 環境でビルドし、配布可能な実行ファイル（`.exe`）を作成するための手順をまとめたものです。
 日常運用では `tools\build.ps1` を実行すれば必要な処理が一括で実行されるようにしています。
 
 ## 1. 前提条件
@@ -24,18 +24,18 @@ pip install -r requirements.txt
 `tools\build.ps1` は以下を自動で実行します。
 1. `pytest` によるテスト実行
 2. 構文チェック（`py_compile`）
-3. 既存の `build/`・`dist/`・`FluxBoundDesigner.spec` の削除
+3. 既存の `build/`・`dist/`・`AppStart.spec` の削除
 4. PyInstaller による onedir ビルド
 5. `tools\verify_build.ps1` による成果物検証
-6. `dist\FluxBoundDesigner\README.txt` の生成
+6. `dist\AppStart\README.txt` の生成
 
 ## 3. ビルド成果物の確認
 ビルド成功後は、最低限次のファイルが存在することを確認してください。
 
-- `dist\FluxBoundDesigner\FluxBoundDesigner.exe`
-- `dist\FluxBoundDesigner\_internal\app.py`
-- `dist\FluxBoundDesigner\_internal\src\analysis.py`
-- `dist\FluxBoundDesigner\_internal\sample_data.csv`
+- `dist\AppStart\AppStart.exe`
+- `dist\AppStart\_internal\app.py`
+- `dist\AppStart\_internal\src\analysis.py`
+- `dist\AppStart\_internal\sample_data.csv`
 
 手動で検証する場合は、次を実行します。
 
@@ -47,7 +47,7 @@ pip install -r requirements.txt
 作成したアプリは次のコマンドで起動します。
 
 ```powershell
-.\dist\FluxBoundDesigner\FluxBoundDesigner.exe
+.\dist\AppStart\AppStart.exe
 ```
 
 起動後、ブラウザで以下にアクセスして画面表示を確認します。
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 
 ## 5. 会社PCでの運用（GitHub ZIP 展開後）
 `dist/` と `build/` は通常 `.gitignore` 対象です。  
-そのため、GitHub からダウンロードした ZIP を会社PCで展開した直後は、`dist\FluxBoundDesigner` が存在しない前提で運用してください。
+そのため、GitHub からダウンロードした ZIP を会社PCで展開した直後は、`dist\AppStart` が存在しない前提で運用してください。
 
 つまり、会社PCでは **`.\tools\build.ps1` の実行が必須** です。
 
@@ -71,11 +71,11 @@ pip install -r requirements.txt
 
 ### 5.2 同僚へ渡すファイル
 同僚に渡すときは、ソース一式ではなく次を渡してください。
-- `dist\FluxBoundDesigner` フォルダ一式（ZIP化して送付）
+- `dist\AppStart` フォルダ一式（ZIP化して送付）
 
 同僚側の基本操作は以下です。
 1. ZIP を展開
-2. `FluxBoundDesigner.exe` を実行
+2. `AppStart.exe` を実行
 3. 必要に応じて `http://localhost:8501` を開く
 
 ## 6. 今後の改良時の運用
@@ -90,7 +90,7 @@ pip install -r requirements.txt
   --noconfirm `
   --clean `
   --onedir `
-  --name FluxBoundDesigner `
+  --name AppStart `
   --add-data "app.py;." `
   --add-data "src;src" `
   --add-data "sample_data.csv;." `
@@ -126,7 +126,7 @@ Get-NetTCPConnection -LocalPort 8501 -ErrorAction SilentlyContinue
 一度クリーンして再ビルドしてください。
 
 ```powershell
-Remove-Item -Recurse -Force build, dist, FluxBoundDesigner.spec
+Remove-Item -Recurse -Force build, dist, AppStart.spec
 .\tools\build.ps1
 ```
 

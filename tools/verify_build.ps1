@@ -4,12 +4,12 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptRoot
 Set-Location $projectRoot
 
-$distRoot = Join-Path $projectRoot "dist\FluxBoundDesigner"
+$distRoot = Join-Path $projectRoot "dist\AppStart"
 $requiredPaths = @(
-    "dist\FluxBoundDesigner\FluxBoundDesigner.exe",
-    "dist\FluxBoundDesigner\_internal\app.py",
-    "dist\FluxBoundDesigner\_internal\src\analysis.py",
-    "dist\FluxBoundDesigner\_internal\sample_data.csv"
+    "dist\AppStart\AppStart.exe",
+    "dist\AppStart\_internal\app.py",
+    "dist\AppStart\_internal\src\analysis.py",
+    "dist\AppStart\_internal\sample_data.csv"
 )
 
 $results = @()
@@ -34,7 +34,7 @@ $dirSizeMb = [Math]::Round($dirSizeBytes / 1MB, 2)
 
 Write-Host ""
 Write-Host "Build size:"
-Write-Host ("- dist\FluxBoundDesigner = {0} MB" -f $dirSizeMb)
+Write-Host ("- dist\AppStart = {0} MB" -f $dirSizeMb)
 
 if ($dirSizeMb -lt 20) {
     Write-Warning "Build size is unexpectedly small (< 20 MB). Verify packaging content."

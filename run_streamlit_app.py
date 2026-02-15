@@ -23,9 +23,9 @@ def resolve_app_path() -> Path:
 def main() -> None:
     app_path = resolve_app_path()
 
-    print(f"[FluxBoundDesigner] frozen={getattr(sys, 'frozen', False)}")
-    print(f"[FluxBoundDesigner] app_path={app_path}")
-    print("[FluxBoundDesigner] launching streamlit on http://localhost:8501")
+    print(f"[AppStart] frozen={getattr(sys, 'frozen', False)}")
+    print(f"[AppStart] app_path={app_path}")
+    print("[AppStart] launching streamlit on http://localhost:8501")
 
     sys.argv = [
         "streamlit",
