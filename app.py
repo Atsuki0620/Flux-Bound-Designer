@@ -188,7 +188,18 @@ def build_prediction_interval_simulation_figure(confidence_pct: float) -> tuple[
     return fig, in_count, out_count
 
 
-st.title("🤖 Flux規格提案くん")
+st.markdown(
+    '<h1 style="'
+    'font-family: system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif, '
+    '\'Apple Color Emoji\', \'Segoe UI Emoji\', \'Segoe UI Symbol\'; '
+    'font-size: 2.5rem; '
+    'font-weight: 600; '
+    'line-height: 1.2; '
+    'margin-bottom: 1rem;'
+    '">'
+    '🤖\uFE0F Flux規格提案くん</h1>',
+    unsafe_allow_html=True,
+)
 st.markdown(
     "<p style='font-size:1.08rem; color:#111111; margin-top:-0.25rem;'>"
     "実測データのバラツキから将来の変動を考慮し、エレメント規格を満たせる平膜の範囲を算出します。"
