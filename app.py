@@ -60,7 +60,7 @@ def build_prediction_interval_simulation_figure(confidence_pct: float) -> tuple[
     x_min, x_max = 0.8, 1.8
     x_plot_min, x_plot_max = 0.8, 1.8
 
-    rng = np.random.default_rng(7)
+    rng = np.random.default_rng(24)
     x_obs = np.linspace(x_min, x_max, 100)
     x_center = (x_min + x_max) / 2.0
     # 予測区間のシグマと観測ノイズを一致させる
