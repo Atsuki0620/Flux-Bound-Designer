@@ -51,6 +51,7 @@ Invoke-PythonChecked -Args @(
     "--add-data", "app.py;.",
     "--add-data", "src;src",
     "--add-data", "sample_data.csv;.",
+    "--add-data", "simulation_data_perfect.csv;.",
     "--collect-all", "streamlit",
     "--collect-all", "plotly",
     "--collect-all", "statsmodels",

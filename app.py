@@ -1,5 +1,7 @@
 import io
+import sys
 import time
+from pathlib import Path
 from statistics import NormalDist
 
 import numpy as np
@@ -11,6 +13,25 @@ from src.analysis import analyze_dataframe, build_figure, validate_dataframe
 
 
 st.set_page_config(page_title="Flux規格提案くん", layout="wide")
+
+
+def get_resource_path(filename: str) -> Path:
+    """
+    Resolve the path to a resource file, handling both development and PyInstaller modes.
+
+    Args:
+        filename: Name of the resource file
+
+    Returns:
+        Path object pointing to the resource file
+    """
+    if getattr(sys, "frozen", False):
+        # Running in PyInstaller bundle
+        base_dir = Path(getattr(sys, "_MEIPASS", ""))
+    else:
+        # Running in development mode
+        base_dir = Path(__file__).resolve().parent
+    return base_dir / filename
 
 
 def build_template_csv_bytes() -> bytes:
@@ -65,7 +86,7 @@ def build_prediction_interval_simulation_figure(confidence_pct: float) -> tuple[
 
     # Load pre-generated perfect simulation data (seed 634, quantile method)
     # This data achieves ±1 accuracy for all prediction levels 50-99%
-    sim_data = pd.read_csv("simulation_data_perfect.csv")
+    sim_data = pd.read_csv(get_resource_path("simulation_data_perfect.csv"))
     x_obs = sim_data["x"].to_numpy()
     y_obs = sim_data["y"].to_numpy()
 
